@@ -1,11 +1,5 @@
+use crossterm::event::{read, Event, KeyCode, KeyModifiers, KeyEvent};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use std::io::{self, Read};
-
-fn to_ctrl_byte(c: char) -> u8 {
-    let byte = c as u8;
-    byte & 0b0001_1111
-}
-
 fn die(e: std::io::Error) {
     panic!("{}", e);
 }
@@ -13,19 +7,18 @@ fn die(e: std::io::Error) {
 fn main() {
     // println!("Hello, world!");
     enable_raw_mode().unwrap();
-    for b in io::stdin().bytes() {
-        match b {
-            Ok(b) => {
-                let c = b as char;
-                if c.is_control() {
-                    println!("{:?} \r", b);
-                } else {
-                    println!("{:#b} ({})\r", b, c);
+    loop {
+        match read() {
+            Ok(event) => match event {
+                Event::Key(event) => {
+                    println!("{:?}\r", event);
+                    if event == KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL)
+                    {
+                        break;
+                    }
                 }
-                if b == to_ctrl_byte('q') {
-                    break;
-                }
-            }
+                _ => (),
+            },
             Err(e) => die(e),
         }
     }
