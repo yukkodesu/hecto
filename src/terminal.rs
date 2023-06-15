@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{self, Clear, ClearType},
 };
-use std::io::stdout;
+use std::io::{stdout, Write};
 
 pub struct Size {
     pub width: u16,
@@ -51,5 +51,8 @@ impl Terminal {
     }
     pub fn cursor_show() {
         execute!(stdout(), cursor::Show {}).unwrap();
+    }
+    pub fn flush() {
+        stdout().flush().unwrap();
     }
 }

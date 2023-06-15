@@ -4,7 +4,7 @@ use std::io::stdout;
 use crossterm::{
     event::{KeyCode, KeyEvent, KeyModifiers},
     execute,
-    style::Print,
+    style::Print, queue,
 };
 pub struct Editor {
     should_quit: bool,
@@ -25,13 +25,11 @@ impl Editor {
             }
             if self.should_quit {
                 break;
-            } else {
-                self.draw_rows();
-                Terminal::move_cursor(0, 0);
             }
             if let Err(e) = self.process_key() {
                 die(e);
             }
+            Terminal::cursor_show();
         }
     }
     fn process_key(&mut self) -> Result<(), std::io::Error> {
@@ -51,8 +49,9 @@ impl Editor {
     }
     fn draw_rows(&self) {
         for _ in 0..self.terminal.size().height - 1 {
-            execute!(stdout(), Print("~\r\n")).unwrap();
+            queue!(stdout(), Print("~\r\n")).unwrap();
         }
+        Terminal::flush();
     }
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
@@ -65,6 +64,7 @@ impl Editor {
             Terminal::move_cursor(0, 0);
         }
         Terminal::cursor_show();
+        Terminal::flush();
         Ok(())
     }
 }
