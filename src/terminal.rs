@@ -1,7 +1,8 @@
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{self, MoveTo},
+    event::{read, Event, KeyEvent},
     execute,
-    terminal::{self, Clear, ClearType}, event::{KeyEvent, Event, read},
+    terminal::{self, Clear, ClearType},
 };
 use std::io::stdout;
 
@@ -26,9 +27,8 @@ impl Terminal {
     pub fn size(&self) -> &Size {
         &self.size
     }
-    pub fn refresh_screen() -> Result<(), std::io::Error> {
-        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0))?;
-        Ok(())
+    pub fn clear_screen() {
+        execute!(stdout(), Clear(ClearType::All)).unwrap();
     }
     pub fn move_cursor(x: u16, y: u16) {
         execute!(stdout(), MoveTo(x, y)).unwrap();
@@ -45,5 +45,11 @@ impl Terminal {
                 Err(e) => return Err(e),
             }
         }
+    }
+    pub fn cursor_hide() {
+        execute!(stdout(), cursor::Hide {}).unwrap();
+    }
+    pub fn cursor_show() {
+        execute!(stdout(), cursor::Show {}).unwrap();
     }
 }

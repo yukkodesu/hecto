@@ -20,11 +20,10 @@ impl Editor {
     }
     pub fn run(&mut self) {
         loop {
-            if let Err(e) = Terminal::refresh_screen() {
+            if let Err(e) = self.refresh_screen() {
                 die(e);
             }
             if self.should_quit {
-                execute!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
                 break;
             } else {
                 self.draw_rows();
@@ -55,9 +54,22 @@ impl Editor {
             execute!(stdout(), Print("~\r\n")).unwrap();
         }
     }
+    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+        Terminal::cursor_hide();
+        Terminal::clear_screen();
+        Terminal::move_cursor(0, 0);
+        if self.should_quit {
+            execute!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
+        } else {
+            self.draw_rows();
+            Terminal::move_cursor(0, 0);
+        }
+        Terminal::cursor_show();
+        Ok(())
+    }
 }
 
 fn die(e: std::io::Error) {
-    Terminal::refresh_screen().unwrap();
+    Terminal::clear_screen();
     panic!("{}", e);
 }
