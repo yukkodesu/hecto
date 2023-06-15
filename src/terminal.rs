@@ -1,7 +1,7 @@
 use crossterm::{
     cursor::{self, MoveTo},
     event::{read, Event, KeyEvent},
-    execute,
+    queue,
     terminal::{self, Clear, ClearType},
 };
 use std::io::{stdout, Write};
@@ -28,10 +28,13 @@ impl Terminal {
         &self.size
     }
     pub fn clear_screen() {
-        execute!(stdout(), Clear(ClearType::All)).unwrap();
+        queue!(stdout(), Clear(ClearType::All)).unwrap();
+    }
+    pub fn clear_current_line() {
+        queue!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
     }
     pub fn move_cursor(x: u16, y: u16) {
-        execute!(stdout(), MoveTo(x, y)).unwrap();
+        queue!(stdout(), MoveTo(x, y)).unwrap();
     }
     pub fn read_key() -> Result<KeyEvent, std::io::Error> {
         loop {
@@ -47,10 +50,10 @@ impl Terminal {
         }
     }
     pub fn cursor_hide() {
-        execute!(stdout(), cursor::Hide {}).unwrap();
+        queue!(stdout(), cursor::Hide {}).unwrap();
     }
     pub fn cursor_show() {
-        execute!(stdout(), cursor::Show {}).unwrap();
+        queue!(stdout(), cursor::Show {}).unwrap();
     }
     pub fn flush() {
         stdout().flush().unwrap();

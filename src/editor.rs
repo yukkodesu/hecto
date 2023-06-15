@@ -3,8 +3,8 @@ use std::io::stdout;
 
 use crossterm::{
     event::{KeyCode, KeyEvent, KeyModifiers},
-    execute,
-    style::Print, queue,
+    queue,
+    style::Print,
 };
 pub struct Editor {
     should_quit: bool,
@@ -49,16 +49,18 @@ impl Editor {
     }
     fn draw_rows(&self) {
         for _ in 0..self.terminal.size().height - 1 {
+            Terminal::clear_current_line();
             queue!(stdout(), Print("~\r\n")).unwrap();
         }
         Terminal::flush();
     }
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
-        Terminal::clear_screen();
         Terminal::move_cursor(0, 0);
+        // Terminal::clear_screen();
         if self.should_quit {
-            execute!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
+            Terminal::clear_screen();
+            queue!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
         } else {
             self.draw_rows();
             Terminal::move_cursor(0, 0);
