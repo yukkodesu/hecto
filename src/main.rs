@@ -1,5 +1,6 @@
 mod editor;
 mod terminal;
+pub use terminal::Terminal;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use editor::Editor;
 

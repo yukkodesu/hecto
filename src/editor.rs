@@ -1,12 +1,10 @@
-use crate::terminal::Terminal;
+use crate::Terminal;
 use std::io::stdout;
 
 use crossterm::{
-    cursor::MoveTo,
-    event::{read, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{KeyCode, KeyEvent, KeyModifiers},
     execute,
     style::Print,
-    terminal::{Clear, ClearType},
 };
 pub struct Editor {
     should_quit: bool,
@@ -22,14 +20,15 @@ impl Editor {
     }
     pub fn run(&mut self) {
         loop {
-            if let Err(e) = self.refresh_screen() {
+            if let Err(e) = Terminal::refresh_screen() {
                 die(e);
             }
             if self.should_quit {
+                execute!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
                 break;
             } else {
                 self.draw_rows();
-                execute!(stdout(), MoveTo(0, 0)).unwrap();
+                Terminal::move_cursor(0, 0);
             }
             if let Err(e) = self.process_key() {
                 die(e);
@@ -37,7 +36,7 @@ impl Editor {
         }
     }
     fn process_key(&mut self) -> Result<(), std::io::Error> {
-        let key_event = read_key()?;
+        let key_event = Terminal::read_key()?;
         // execute!(stdout(), Print(format!("{:?}\r\n", key_event)))?;
         match key_event {
             KeyEvent {
@@ -51,36 +50,14 @@ impl Editor {
         }
         Ok(())
     }
-
-    fn refresh_screen(&self) -> Result<(), std::io::Error> {
-        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0))?;
-        if self.should_quit {
-            execute!(stdout(), Print("Hecto Exit!\r\n"))?;
-        }
-        Ok(())
-    }
     fn draw_rows(&self) {
-        for _ in 0..self.terminal.size().height {
+        for _ in 0..self.terminal.size().height - 1 {
             execute!(stdout(), Print("~\r\n")).unwrap();
         }
     }
 }
 
 fn die(e: std::io::Error) {
-    execute!(stdout(), Clear(ClearType::All)).unwrap();
+    Terminal::refresh_screen().unwrap();
     panic!("{}", e);
-}
-
-fn read_key() -> Result<KeyEvent, std::io::Error> {
-    loop {
-        match read() {
-            Ok(event) => match event {
-                Event::Key(event) => {
-                    return Ok(event);
-                }
-                _ => continue,
-            },
-            Err(e) => return Err(e),
-        }
-    }
 }
