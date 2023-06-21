@@ -6,6 +6,8 @@ use crossterm::{
 };
 use std::io::{stdout, Write};
 
+use crate::Position;
+
 pub struct Size {
     pub width: u16,
     pub height: u16,
@@ -33,8 +35,8 @@ impl Terminal {
     pub fn clear_current_line() {
         queue!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
     }
-    pub fn move_cursor(x: u16, y: u16) {
-        queue!(stdout(), MoveTo(x, y)).unwrap();
+    pub fn move_cursor(pos: &Position) {
+        queue!(stdout(), MoveTo(pos.x as u16, pos.y as u16)).unwrap();
     }
     pub fn read_key() -> Result<KeyEvent, std::io::Error> {
         loop {
