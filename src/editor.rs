@@ -82,9 +82,17 @@ impl Editor {
         let Position { mut x, mut y } = self.cursor_pos;
         match key_event.code {
             KeyCode::Up => y = y.saturating_sub(1),
-            KeyCode::Down => y = y.saturating_add(1),
+            KeyCode::Down => {
+                if y < (self.terminal.size().height as usize) {
+                    y = y.saturating_add(1);
+                }
+            }
             KeyCode::Left => x = x.saturating_sub(1),
-            KeyCode::Right => x = x.saturating_add(1),
+            KeyCode::Right => {
+                if x < (self.terminal.size().width as usize) {
+                    x = x.saturating_add(1);
+                }
+            }
             _ => (),
         }
         self.cursor_pos = Position { x, y };
