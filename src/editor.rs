@@ -70,6 +70,21 @@ impl Editor {
             | KeyEvent {
                 code: KeyCode::Down,
                 ..
+            }
+            | KeyEvent {
+                code: KeyCode::Home,
+                ..
+            }
+            | KeyEvent {
+                code: KeyCode::End, ..
+            }
+            | KeyEvent {
+                code: KeyCode::PageDown,
+                ..
+            }
+            | KeyEvent {
+                code: KeyCode::PageUp,
+                ..
             } => self.move_cursor(key_event),
 
             //Others
@@ -80,19 +95,25 @@ impl Editor {
 
     fn move_cursor(&mut self, key_event: KeyEvent) {
         let Position { mut x, mut y } = self.cursor_pos;
+        let height = self.terminal.size().height as usize;
+        let width = self.terminal.size().width as usize;
         match key_event.code {
             KeyCode::Up => y = y.saturating_sub(1),
             KeyCode::Down => {
-                if y < (self.terminal.size().height as usize) {
+                if y < height {
                     y = y.saturating_add(1);
                 }
             }
             KeyCode::Left => x = x.saturating_sub(1),
             KeyCode::Right => {
-                if x < (self.terminal.size().width as usize) {
+                if x < width {
                     x = x.saturating_add(1);
                 }
             }
+            KeyCode::PageUp => y = 0,
+            KeyCode::PageDown => y = height,
+            KeyCode::Home => x = 0,
+            KeyCode::End => x = width,
             _ => (),
         }
         self.cursor_pos = Position { x, y };
