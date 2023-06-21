@@ -45,7 +45,7 @@ impl Editor {
 
     fn process_key(&mut self) -> Result<(), std::io::Error> {
         let key_event = Terminal::read_key()?;
-        println!("{:?}\r\n", key_event);
+        // println!("{:?}\r\n", key_event);
         match key_event {
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
