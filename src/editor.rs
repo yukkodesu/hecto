@@ -1,5 +1,5 @@
-use crate::Terminal;
-use std::io::stdout;
+use crate::{document, Document, Row, Terminal};
+use std::{env, io::stdout};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -9,6 +9,7 @@ use crossterm::{
     style::Print,
 };
 
+#[derive(Default)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
@@ -18,14 +19,28 @@ pub struct Editor {
     should_quit: bool,
     terminal: Terminal,
     cursor_pos: Position,
+    document: Document,
 }
 
 impl Editor {
     pub fn new() -> Self {
+        let args: Vec<String> = env::args().collect();
+        let document = if let Some(filename) = args.get(1) {
+            match Document::open(filename) {
+                Ok(document) => document,
+                Err(e) => {
+                    die(e);
+                    Document::default()
+                }
+            }
+        } else {
+            Document::default()
+        };
         Editor {
             should_quit: false,
             terminal: Terminal::new().expect("Failed to initialize terminal"),
-            cursor_pos: Position { x: 0, y: 0 },
+            cursor_pos: Position::default(),
+            document,
         }
     }
 
@@ -127,11 +142,19 @@ impl Editor {
         queue!(stdout(), Print(&welcome_msg)).unwrap();
     }
 
+    fn draw_row(&self, row: &Row) {
+        let end = self.terminal.size().width as usize;
+        let row = row.render(0, end);
+        queue!(stdout(), Print(format!("{}\r\n", row))).unwrap();
+    }
+
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
-        for row in 0..height - 1 {
+        for terminal_row_idx in 0..height - 1 {
             Terminal::clear_current_line();
-            if row == height / 3 {
+            if let Some(row) = self.document.row(terminal_row_idx as usize) {
+                self.draw_row(row);
+            } else if self.document.is_empty() && terminal_row_idx == height / 3 {
                 self.draw_welcome_msg();
             } else {
                 queue!(stdout(), Print("~\r\n")).unwrap();
@@ -142,7 +165,7 @@ impl Editor {
 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
-        Terminal::move_cursor(&Position { x: 0, y: 0 });
+        Terminal::move_cursor(&Position::default());
         // Terminal::clear_screen();
         if self.should_quit {
             Terminal::clear_screen();
