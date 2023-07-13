@@ -16,4 +16,13 @@ impl Row {
         let start = start.min(end);
         self.string.get(start..end).unwrap_or_default()
     }
+    pub fn len(&self) -> usize {
+        self.string.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.string.is_empty()
+    }
+    pub fn len_no_whitespace(&self) -> usize {
+        self.string.trim_start().len()
+    }
 }

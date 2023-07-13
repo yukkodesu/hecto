@@ -19,6 +19,7 @@ pub struct Editor {
     should_quit: bool,
     terminal: Terminal,
     cursor_pos: Position,
+    offset: Position,
     document: Document,
 }
 
@@ -41,6 +42,7 @@ impl Editor {
             terminal: Terminal::new().expect("Failed to initialize terminal"),
             cursor_pos: Position::default(),
             document,
+            offset: Position::default(),
         }
     }
 
@@ -105,13 +107,38 @@ impl Editor {
             //Others
             _ => (),
         }
+        self.scroll();
         Ok(())
     }
 
-    fn move_cursor(&mut self, key_event: KeyEvent) {
-        let Position { mut x, mut y } = self.cursor_pos;
-        let height = self.terminal.size().height as usize;
+    fn scroll(&mut self) {
+        let Position { x, y } = self.cursor_pos;
         let width = self.terminal.size().width as usize;
+        let height = self.terminal.size().height as usize;
+        let mut offset = &mut self.offset;
+        if y < offset.y {
+            offset.y = y;
+        } else if y >= offset.y.saturating_add(height) {
+            offset.y = y.saturating_sub(height).saturating_add(1);
+        }
+        if x < offset.x {
+            offset.x = x;
+        } else if x >= offset.x.saturating_add(width) {
+            offset.x = x.saturating_sub(width).saturating_add(1);
+        }
+    }
+
+    fn move_cursor(&mut self, key_event: KeyEvent) {
+        let get_current_width = |y| {
+            if let Some(row) = self.document.row(y) {
+                row.len()
+            } else {
+                0
+            }
+        };
+        let Position { mut x, mut y } = self.cursor_pos;
+        let height = self.document.len();
+        let mut width = get_current_width(y);
         match key_event.code {
             KeyCode::Up => y = y.saturating_sub(1),
             KeyCode::Down => {
@@ -125,12 +152,25 @@ impl Editor {
                     x = x.saturating_add(1);
                 }
             }
-            KeyCode::PageUp => y = 0,
-            KeyCode::PageDown => y = height,
-            KeyCode::Home => x = 0,
+            KeyCode::PageUp => y = y.saturating_sub(self.terminal.size().height as usize),
+            KeyCode::PageDown => {
+                y = y
+                    .saturating_add(self.terminal.size().height as usize)
+                    .min(height)
+            }
+            KeyCode::Home => {
+                let len_no_whitespace = if let Some(row) = self.document.row(y) {
+                    row.len_no_whitespace()
+                } else {
+                    0
+                };
+                x = width - len_no_whitespace;
+            }
             KeyCode::End => x = width,
             _ => (),
         }
+        width = get_current_width(y);
+        x = x.min(width);
         self.cursor_pos = Position { x, y };
     }
 
@@ -143,16 +183,19 @@ impl Editor {
     }
 
     fn draw_row(&self, row: &Row) {
-        let end = self.terminal.size().width as usize;
-        let row = row.render(0, end);
+        // let start = 0;
+        // let end = self.terminal.size().width as usize;
+        let start = self.offset.x;
+        let end = self.offset.x + self.terminal.size().width as usize;
+        let row = row.render(start, end);
         queue!(stdout(), Print(format!("{}\r\n", row))).unwrap();
     }
-
+    /* Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia dicta doloribus at, ab, laudantium eius officia nihil accusantium non unde quidem culpa repellendus? Inventore ea ex voluptates saepe, alias laboriosam quia aut, incidunt id rem mollitia beatae, rerum nulla eveniet ipsam exercitationem. Magni repellendus temporibus natus maxime, quos qui perspiciatis!  */
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
         for terminal_row_idx in 0..height - 1 {
             Terminal::clear_current_line();
-            if let Some(row) = self.document.row(terminal_row_idx as usize) {
+            if let Some(row) = self.document.row(terminal_row_idx as usize + self.offset.y) {
                 self.draw_row(row);
             } else if self.document.is_empty() && terminal_row_idx == height / 3 {
                 self.draw_welcome_msg();
@@ -172,7 +215,10 @@ impl Editor {
             queue!(stdout(), Print("Hecto Exit!\r\n")).unwrap();
         } else {
             self.draw_rows();
-            Terminal::move_cursor(&self.cursor_pos);
+            Terminal::move_cursor(&Position {
+                x: self.cursor_pos.x.saturating_sub(self.offset.x),
+                y: self.cursor_pos.y.saturating_sub(self.offset.y),
+            });
         }
         Terminal::cursor_show();
         Terminal::flush();
