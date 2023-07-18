@@ -2,7 +2,7 @@ use crossterm::{
     cursor::{self, MoveTo},
     event::{read, Event, KeyEvent},
     queue,
-    style::{Color, SetBackgroundColor},
+    style::{Color, SetBackgroundColor, SetForegroundColor},
     terminal::{self, Clear, ClearType},
 };
 use std::io::{stdout, Write};
@@ -42,8 +42,16 @@ impl Terminal {
     pub fn set_bg_color(color: Color) {
         queue!(stdout(), SetBackgroundColor(color)).unwrap();
     }
+
     pub fn reset_bg_color() {
         queue!(stdout(), SetBackgroundColor(Color::Reset)).unwrap();
+    }
+
+    pub fn set_fg_color(color: Color) {
+        queue!(stdout(), SetForegroundColor(color)).unwrap();
+    }
+    pub fn reset_fg_color() {
+        queue!(stdout(), SetForegroundColor(Color::Reset)).unwrap();
     }
 
     pub fn move_cursor(pos: &Position) {

@@ -3,7 +3,16 @@ use crossterm::style::Color;
 use std::{env, io::stdout};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const STATUS_BG_COLOR: Color = Color::Rgb { r: 0, g: 181, b: 173 };
+const STATUS_FG_COLOR: Color = Color::Rgb {
+    r: 63,
+    g: 63,
+    b: 63,
+};
+const STATUS_BG_COLOR: Color = Color::Rgb {
+    r: 0,
+    g: 181,
+    b: 173,
+};
 
 use crossterm::{
     event::{KeyCode, KeyEvent, KeyModifiers},
@@ -219,10 +228,28 @@ impl Editor {
     }
 
     fn draw_status_bar(&self) {
-        let space = " ".repeat(self.terminal.size().width as usize);
+        let width = self.terminal.size().width as usize;
+        let mut file_name = String::new();
+        if let Some(filename) = &self.document.file_name {
+            file_name.push_str(filename);
+            file_name.truncate(20);
+        }
+        let mut status = format!("{} - {} lines", file_name, self.document.len());
+        let line_indicator = format!(
+            "{}:{}",
+            self.cursor_pos.y.saturating_add(1),
+            self.cursor_pos.x.saturating_add(1)
+        );
+        if width > status.len() + line_indicator.len() {
+            status.push_str(&" ".repeat(width - status.len() - line_indicator.len()));
+        }
+        status.push_str(&line_indicator);
+        status.truncate(width);
         Terminal::set_bg_color(STATUS_BG_COLOR);
-        queue!(stdout(), Print(format!("{}\r\n", space))).unwrap();
+        Terminal::set_fg_color(STATUS_FG_COLOR);
+        queue!(stdout(), Print(format!("{}\r\n", status))).unwrap();
         Terminal::reset_bg_color();
+        Terminal::reset_fg_color();
     }
 
     fn draw_message_bar(&self) {
