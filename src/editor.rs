@@ -136,6 +136,14 @@ impl Editor {
                 ..
             } => self.move_cursor(key_event),
 
+            KeyEvent {
+                code: KeyCode::Char(c),
+                ..
+            } => {
+                self.document.insert(&self.cursor_pos, c);
+                self.move_cursor(KeyEvent::new(KeyCode::Right, KeyModifiers::NONE));
+            }
+
             //Others
             _ => (),
         }
