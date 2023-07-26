@@ -144,6 +144,20 @@ impl Editor {
                 self.move_cursor(KeyEvent::new(KeyCode::Right, KeyModifiers::NONE));
             }
 
+            KeyEvent {
+                code: KeyCode::Delete,
+                ..
+            } => self.document.delete(&self.cursor_pos),
+
+            KeyEvent {
+                code: KeyCode::Backspace,
+                ..
+            } => {
+                if self.cursor_pos.x > 0 || self.cursor_pos.y > 0 {
+                    self.move_cursor(KeyEvent::new(KeyCode::Left, KeyModifiers::NONE));
+                    self.document.delete(&self.cursor_pos)
+                }
+            }
             //Others
             _ => (),
         }
@@ -155,7 +169,7 @@ impl Editor {
         let Position { x, y } = self.cursor_pos;
         let width = self.terminal.size().width as usize;
         let height = self.terminal.size().height as usize;
-        let mut offset = &mut self.offset;
+        let offset = &mut self.offset;
         if y < offset.y {
             offset.y = y;
         } else if y >= offset.y.saturating_add(height) {
